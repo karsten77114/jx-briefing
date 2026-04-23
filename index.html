@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JX Briefing Tool</title>
+<style>
+:root {
+  --bg: #080d14;
+  --surface: #111827;
+  --card: #1a2536;
+  --border: #2a3a50;
+  --accent: #f59e0b;
+  --text: #e2e8f0;
+  --muted: #64748b;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  min-height: 100vh;
+  padding: 60px 20px 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.hero { text-align: center; max-width: 600px; margin-bottom: 56px; }
+.logo { font-size: 56px; margin-bottom: 20px; }
+h1 { font-size: 38px; font-weight: 800; color: var(--accent); margin-bottom: 12px; letter-spacing: -0.5px; }
+.subtitle { color: #94a3b8; font-size: 16px; line-height: 1.7; }
+.tag {
+  display: inline-block;
+  padding: 3px 10px;
+  background: #1a1500;
+  color: var(--accent);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  border: 1px solid #3a2a00;
+}
+.steps { max-width: 540px; width: 100%; margin-bottom: 48px; }
+.step { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 28px; }
+.step-num {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--accent); color: #000;
+  font-weight: 800; font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 2px;
+}
+.step-content h3 { color: var(--text); margin-bottom: 5px; font-size: 15px; }
+.step-content p { color: #94a3b8; font-size: 14px; line-height: 1.5; }
+.bookmarklet-wrap { text-align: center; margin-bottom: 12px; }
+.bookmarklet-btn {
+  display: inline-block;
+  padding: 14px 28px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #000;
+  font-weight: 800;
+  font-size: 16px;
+  border-radius: 10px;
+  text-decoration: none;
+  cursor: grab;
+  user-select: none;
+  box-shadow: 0 4px 24px rgba(245,158,11,0.35), 0 0 0 1px rgba(245,158,11,0.2);
+  transition: transform 0.15s, box-shadow 0.15s;
+  letter-spacing: 0.01em;
+}
+.bookmarklet-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 36px rgba(245,158,11,0.45); }
+.bookmarklet-btn:active { cursor: grabbing; transform: translateY(0); }
+.drag-hint { color: var(--muted); font-size: 12px; margin-top: 10px; }
+.preview-box {
+  max-width: 680px; width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-top: 16px;
+}
+.preview-title {
+  padding: 14px 20px;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--muted);
+  display: flex; align-items: center; gap: 8px;
+}
+.preview-body { padding: 24px; }
+.preview-row { display: flex; gap: 10px; margin-bottom: 10px; }
+.preview-card {
+  flex: 1;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  text-align: center;
+}
+.preview-card-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+.preview-card-value { font-size: 22px; font-weight: 700; color: var(--accent); }
+.preview-card-unit { font-size: 11px; color: #475569; margin-top: 3px; }
+.preview-bar { height: 3px; background: #1a2536; border-radius: 2px; margin-top: 8px; overflow: hidden; }
+.preview-bar-fill { height: 100%; border-radius: 2px; }
+.divider { width: 100%; height: 1px; background: var(--border); max-width: 540px; margin: 48px 0; }
+.note {
+  max-width: 540px;
+  background: #0d1a28;
+  border: 1px solid #1e3048;
+  border-radius: 10px;
+  padding: 16px 20px;
+  font-size: 13px;
+  color: #94a3b8;
+  line-height: 1.6;
+}
+.note strong { color: #60a5fa; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="logo">✈</div>
+  <div class="tag">STARLUX Airlines · LIDO Briefing</div>
+  <h1>JX Briefing Tool</h1>
+  <p class="subtitle">
+    自動讀取 LIDO 飛行計劃（OFP），以清晰、美觀的方式顯示燃油、重量、NOTAM 與機組員資訊。<br>
+    無需複製貼上，開啟 LIDO 頁面後一鍵載入。
+  </p>
+</div>
+
+<div class="steps">
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-content">
+      <h3>將書籤拖到瀏覽器書籤列</h3>
+      <p>將下方的金色按鈕「✈ JX Briefing」拖曳到 Chrome 書籤列（或右鍵 → 加入書籤）。只需設定一次。</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-content">
+      <h3>開啟 LIDO 並選擇航班</h3>
+      <p>前往 <strong style="color:#f59e0b">sjx.lido.aero</strong>，登入後點開任一航班簡報頁面。</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-content">
+      <h3>點擊書籤，自動載入簡報</h3>
+      <p>點擊書籤列的「✈ JX Briefing」，右側會滑出資訊面板，自動顯示 OFP、燃油、NOTAM 等資訊。</p>
+    </div>
+  </div>
+</div>
+
+<div class="bookmarklet-wrap">
+  <a class="bookmarklet-btn" id="bm" href="#">✈ JX Briefing</a>
+  <p class="drag-hint">⬆ 長按並拖曳此按鈕到書籤列</p>
+</div>
+
+<div class="divider"></div>
+
+<div class="preview-box">
+  <div class="preview-title">
+    <span>🖥</span>
+    <span>面板預覽 — 概覽頁籤</span>
+  </div>
+  <div class="preview-body">
+    <div style="margin-bottom:16px">
+      <div style="font-size:20px;font-weight:700;color:#f59e0b">✈ JX850 &nbsp;<span style="font-size:13px;color:#475569;font-weight:400">OFP 4/0/0</span></div>
+      <div style="font-size:18px;margin-top:4px">TPE → CTS</div>
+      <div style="font-size:12px;color:#64748b;margin-top:6px">23 APR 2026 &nbsp;·&nbsp; A359 &nbsp;·&nbsp; B58506</div>
+    </div>
+    <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:#64748b;margin-bottom:10px">飛行燃油 (KG)</div>
+    <div class="preview-row">
+      <div class="preview-card" style="border-color:#f59e0b40;background:#1a2010">
+        <div class="preview-card-label">起飛油量</div>
+        <div class="preview-card-value">24,826</div>
+        <div class="preview-card-unit">kg</div>
+      </div>
+      <div class="preview-card" style="border-color:#3b82f640;background:#101828">
+        <div class="preview-card-label">加油量 (Block)</div>
+        <div class="preview-card-value" style="color:#60a5fa">25,691</div>
+        <div class="preview-card-unit">kg</div>
+      </div>
+    </div>
+    <div style="background:#1a2536;border:1px solid #2a3a52;border-radius:8px;padding:14px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
+        <span style="color:#94a3b8">航程油量 (Trip)</span>
+        <span style="font-weight:600">15,575 kg <span style="color:#64748b;font-size:11px">(61%)</span></span>
+      </div>
+      <div class="preview-bar"><div class="preview-bar-fill" style="width:61%;background:#3b82f6"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:10px;margin-bottom:6px">
+        <span style="color:#94a3b8">備降油量 (Altn)</span>
+        <span style="font-weight:600">4,919 kg <span style="color:#64748b;font-size:11px">(19%)</span></span>
+      </div>
+      <div class="preview-bar"><div class="preview-bar-fill" style="width:19%;background:#64748b"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:10px;margin-bottom:6px">
+        <span style="color:#94a3b8">最終儲備 (Final Res)</span>
+        <span style="font-weight:600">2,200 kg <span style="color:#64748b;font-size:11px">(9%)</span></span>
+      </div>
+      <div class="preview-bar"><div class="preview-bar-fill" style="width:9%;background:#64748b"></div></div>
+    </div>
+    <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:#64748b;margin-bottom:10px">重量 (公噸)</div>
+    <table style="width:100%;border-collapse:collapse;background:#1a2536;border-radius:8px;overflow:hidden;border:1px solid #2a3a52">
+      <thead><tr>
+        <th style="font-size:10px;text-transform:uppercase;color:#64748b;padding:8px 10px;text-align:left;border-bottom:1px solid #2a3a52">項目</th>
+        <th style="font-size:10px;text-transform:uppercase;color:#64748b;padding:8px 10px;text-align:right;border-bottom:1px solid #2a3a52">計畫</th>
+        <th style="font-size:10px;text-transform:uppercase;color:#64748b;padding:8px 10px;text-align:right;border-bottom:1px solid #2a3a52">限制</th>
+        <th style="font-size:10px;text-transform:uppercase;color:#64748b;padding:8px 10px;text-align:right;border-bottom:1px solid #2a3a52">使用率</th>
+      </tr></thead>
+      <tbody>
+        <tr><td style="padding:9px 10px;border-bottom:1px solid #111827">ZFW</td><td style="text-align:right;padding:9px 10px;color:#f59e0b;font-weight:600;border-bottom:1px solid #111827">165.1</td><td style="text-align:right;padding:9px 10px;color:#475569;font-size:12px;border-bottom:1px solid #111827">195.7</td><td style="text-align:right;padding:9px 10px;border-bottom:1px solid #111827"><span style="color:#22c55e;font-weight:600">84%</span></td></tr>
+        <tr><td style="padding:9px 10px;border-bottom:1px solid #111827">TOW</td><td style="text-align:right;padding:9px 10px;color:#f59e0b;font-weight:600;border-bottom:1px solid #111827">189.9</td><td style="text-align:right;padding:9px 10px;color:#475569;font-size:12px;border-bottom:1px solid #111827">235.0</td><td style="text-align:right;padding:9px 10px;border-bottom:1px solid #111827"><span style="color:#22c55e;font-weight:600">81%</span></td></tr>
+        <tr><td style="padding:9px 10px">LDW</td><td style="text-align:right;padding:9px 10px;color:#f59e0b;font-weight:600">174.4</td><td style="text-align:right;padding:9px 10px;color:#475569;font-size:12px">207.0</td><td style="text-align:right;padding:9px 10px"><span style="color:#22c55e;font-weight:600">84%</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<div class="note">
+  <strong>注意：</strong>此工具透過瀏覽器書籤（Bookmarklet）運作，需在 LIDO 頁面上執行。資料直接來自 LIDO 官方 API，安全且不儲存任何帳密或飛行資料。第一次使用時可能需要 3-8 秒載入授權標頭。
+</div>
+
+<script>
+// ============================================================
+// Bookmarklet Code
+// ============================================================
+const bookmarkletCode = (function() {
+  function bm() {
+    'use strict';
+    var PANEL = '__jxbf__panel';
+    var existing = document.getElementById(PANEL);
+    if (existing) { existing.style.display = existing.style.display === 'none' ? 'flex' : 'none'; return; }
+
+    var legMatch = location.hash.match(/flight\/([^\/]+)/);
+    if (!legMatch) { alert('請在 LIDO 航班簡報頁面使用此書籤\n(URL 需包含 /flight/...)'); return; }
+    var legId = legMatch[1];
+
+    // ── Styles ──────────────────────────────────────────────
+    var css = document.createElement('style');
+    css.textContent = [
+      '#__jxbf__panel{position:fixed;top:0;right:0;width:580px;height:100vh;background:#0a0f1a;border-left:2px solid #1e3050;display:flex;flex-direction:column;z-index:9999999;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px;color:#e2e8f0;box-shadow:-12px 0 60px rgba(0,0,0,.7);animation:__jxSlide .3s ease}',
+      '@keyframes __jxSlide{from{transform:translateX(100%)}to{transform:translateX(0)}}',
+      '#__jxbf__panel *{box-sizing:border-box}',
+      '.jx-hdr{padding:14px 18px;background:#111827;border-bottom:1px solid #1e3050;flex-shrink:0;position:relative}',
+      '.jx-fn{font-size:22px;font-weight:800;color:#f59e0b;display:flex;align-items:center;gap:10px}',
+      '.jx-route{font-size:19px;margin-top:3px;font-weight:500}',
+      '.jx-meta{font-size:12px;color:#475569;margin-top:5px;display:flex;gap:14px;flex-wrap:wrap}',
+      '.jx-close{position:absolute;top:12px;right:14px;background:none;border:none;color:#475569;font-size:22px;cursor:pointer;padding:4px;line-height:1}',
+      '.jx-close:hover{color:#e2e8f0}',
+      '.jx-tabs{display:flex;border-bottom:1px solid #1e3050;background:#111827;flex-shrink:0}',
+      '.jx-tab{flex:1;padding:10px 2px;text-align:center;cursor:pointer;color:#475569;border-bottom:2px solid transparent;font-size:13px;font-weight:500;transition:all .2s;user-select:none}',
+      '.jx-tab:hover{color:#e2e8f0}',
+      '.jx-tab.on{color:#f59e0b;border-bottom-color:#f59e0b}',
+      '.jx-body{flex:1;overflow-y:auto;padding:14px 16px}',
+      '.jx-body::-webkit-scrollbar{width:5px}',
+      '.jx-body::-webkit-scrollbar-track{background:#111827}',
+      '.jx-body::-webkit-scrollbar-thumb{background:#1e3050;border-radius:3px}',
+      '.jx-st{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#475569;margin:18px 0 8px}',
+      '.jx-st:first-child{margin-top:0}',
+      '.jx-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}',
+      '.jx-card{background:#152030;border:1px solid #1e3050;border-radius:8px;padding:12px}',
+      '.jx-card.a{border-color:#f59e0b40;background:#181500}',
+      '.jx-card.b{border-color:#3b82f640;background:#0e1825}',
+      '.jx-cl{font-size:10px;text-transform:uppercase;color:#475569;letter-spacing:.07em;margin-bottom:4px}',
+      '.jx-cv{font-size:22px;font-weight:700;line-height:1}',
+      '.jx-card.a .jx-cv{color:#f59e0b}',
+      '.jx-card.b .jx-cv{color:#60a5fa}',
+      '.jx-cu{font-size:11px;color:#334155;margin-top:2px}',
+      '.jx-fbox{background:#152030;border:1px solid #1e3050;border-radius:8px;padding:13px;margin-bottom:8px}',
+      '.jx-frow{margin-bottom:10px}',
+      '.jx-frow:last-child{margin-bottom:0}',
+      '.jx-fl{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px}',
+      '.jx-flabel{color:#64748b}',
+      '.jx-fval{font-weight:600}',
+      '.jx-bar{height:3px;background:#0d1524;border-radius:2px;overflow:hidden}',
+      '.jx-bfill{height:100%;border-radius:2px}',
+      '.jx-wtbl{width:100%;border-collapse:collapse;background:#152030;border-radius:8px;overflow:hidden;border:1px solid #1e3050}',
+      '.jx-wtbl th{font-size:10px;text-transform:uppercase;color:#475569;padding:7px 10px;border-bottom:1px solid #0d1524}',
+      '.jx-wtbl th:first-child{text-align:left}',
+      '.jx-wtbl th:not(:first-child){text-align:right}',
+      '.jx-wtbl td{padding:9px 10px;border-bottom:1px solid #0d1524;color:#e2e8f0}',
+      '.jx-wtbl td:not(:first-child){text-align:right}',
+      '.jx-wtbl tr:last-child td{border-bottom:none}',
+      '.jx-pln{color:#f59e0b;font-weight:600}',
+      '.jx-lim{color:#334155;font-size:12px}',
+      '.jx-row{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:#152030;border-radius:7px;margin-bottom:5px;border:1px solid #1e3050}',
+      '.jx-rl{color:#64748b;font-size:13px}',
+      '.jx-rv{color:#e2e8f0;font-weight:500}',
+      '.jx-mono{font-family:"SF Mono","Courier New",monospace;font-size:11.5px;color:#8ba0b8;white-space:pre;overflow-x:auto;padding:12px;background:#060c14;border-radius:6px;border:1px solid #1a2536;line-height:1.65}',
+      '.jx-mono::-webkit-scrollbar{height:4px}',
+      '.jx-mono::-webkit-scrollbar-thumb{background:#1e3050}',
+      '.jx-nsec{margin-bottom:14px}',
+      '.jx-ntitle{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#f59e0b;padding:6px 10px;background:#150f00;border-radius:4px;margin-bottom:7px;border-left:3px solid #f59e0b}',
+      '.jx-crew{display:flex;align-items:center;gap:12px;padding:12px;background:#152030;border-radius:8px;margin-bottom:7px;border:1px solid #1e3050}',
+      '.jx-av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#1c3555,#294878);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}',
+      '.jx-cn{font-weight:600}',
+      '.jx-cid{font-size:12px;color:#475569}',
+      '.jx-spin-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;color:#475569}',
+      '.jx-spin{width:32px;height:32px;border:3px solid #1a2a3a;border-top-color:#f59e0b;border-radius:50%;animation:__jxSpin .8s linear infinite}',
+      '@keyframes __jxSpin{to{transform:rotate(360deg)}}',
+      '.jx-err{color:#ef4444}',
+      '.jxg{color:#22c55e}',
+      '.jxr{color:#ef4444}',
+      '.jxa{color:#f59e0b}'
+    ].join('');
+    document.head.appendChild(css);
+
+    // ── Panel HTML ────────────────────────────────────────────
+    var panel = document.createElement('div');
+    panel.id = PANEL;
+    panel.innerHTML =
+      '<div class="jx-hdr">' +
+        '<div class="jx-fn">✈ JX<span id="__jfn">---</span><span id="__jofp" style="font-size:13px;color:#334155;font-weight:400">OFP ---</span></div>' +
+        '<div class="jx-route" id="__jroute">--- → ---</div>' +
+        '<div class="jx-meta"><span id="__jdate">---</span><span id="__jac">---</span><span id="__jreg">---</span></div>' +
+        '<button class="jx-close" id="__jclose">✕</button>' +
+      '</div>' +
+      '<div class="jx-tabs">' +
+        '<div class="jx-tab on" data-t="ov">概覽</div>' +
+        '<div class="jx-tab" data-t="ofp">OFP</div>' +
+        '<div class="jx-tab" data-t="notam">NOTAM</div>' +
+        '<div class="jx-tab" data-t="crew">機組 / 派遣</div>' +
+      '</div>' +
+      '<div class="jx-body" id="__jbody">' +
+        '<div class="jx-spin-wrap"><div class="jx-spin"></div><div id="__jstatus">正在初始化...</div></div>' +
+      '</div>';
+    document.body.appendChild(panel);
+
+    document.getElementById('__jclose').onclick = function() { panel.style.display = 'none'; };
+
+    var curTab = 'ov';
+    var data = null;
+
+    panel.querySelectorAll('.jx-tab').forEach(function(tab) {
+      tab.onclick = function() {
+        panel.querySelectorAll('.jx-tab').forEach(function(t) { t.classList.remove('on'); });
+        tab.classList.add('on');
+        curTab = tab.dataset.t;
+        if (data) renderTab(curTab);
+      };
+    });
+
+    // ── Header Capture ────────────────────────────────────────
+    function setStatus(msg) {
+      var el = document.getElementById('__jstatus');
+      if (el) el.textContent = msg;
+    }
+
+    function captureHeaders() {
+      if (window.__lidoHeaders) return Promise.resolve(window.__lidoHeaders);
+      var iframe = document.getElementById('lcb');
+      if (!iframe) return Promise.reject(new Error('找不到 LIDO iframe (#lcb)'));
+      var iWin = iframe.contentWindow;
+      return new Promise(function(resolve, reject) {
+        var timer = setTimeout(function() {
+          reject(new Error('授權標頭取得逾時，請切換 LIDO 頁籤後再試'));
+        }, 14000);
+        var captured = {};
+        var origSet = iWin.XMLHttpRequest.prototype.setRequestHeader;
+        var origSend = iWin.XMLHttpRequest.prototype.send;
+
+        iWin.XMLHttpRequest.prototype.setRequestHeader = function(n, v) {
+          if (n && (n.indexOf('X-lido') === 0 || n === 'Accept')) captured[n] = v;
+          origSet.call(this, n, v);
+        };
+        iWin.XMLHttpRequest.prototype.send = function() {
+          var xk = Object.keys(captured).filter(function(k) { return k.indexOf('X-lido') === 0; });
+          if (xk.length >= 3) {
+            clearTimeout(timer);
+            window.__lidoHeaders = Object.assign({}, captured);
+            iWin.XMLHttpRequest.prototype.setRequestHeader = origSet;
+            iWin.XMLHttpRequest.prototype.send = origSend;
+            resolve(captured);
+          }
+          origSend.apply(this, arguments);
+        };
+
+        // Trigger Angular HTTP by switching sub-page
+        var h = location.hash;
+        var base = (h.match(/#(.*\/flight\/[^\/]+)/) || [])[1];
+        if (base) {
+          var subs = ['/notam', '/ofp', '/weather', '/overview', '/dispatch'];
+          var cur = subs.find(function(s) { return h.includes(s); });
+          var next = subs.find(function(s) { return s !== cur; }) || '/notam';
+          location.hash = '#' + base + next;
+          setTimeout(function() { if (location.hash !== h) location.hash = h; }, 2500);
+        }
+      });
+    }
+
+    // ── Fetch helpers ──────────────────────────────────────────
+    function apiFetch(url, headers, bizId, asText) {
+      var iWin = document.getElementById('lcb').contentWindow;
+      var h = Object.assign({}, headers);
+      h['X-lido-businessId'] = bizId;
+      return iWin.fetch(url, { headers: h }).then(function(r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status + ' — ' + url);
+        return asText ? r.text() : r.json();
+      });
+    }
+
+    // ── Load All ───────────────────────────────────────────────
+    function loadAll() {
+      return captureHeaders().then(function(headers) {
+        setStatus('正在載入簡報套件...');
+        return apiFetch('/lido/lcb/ui/' + legId + '/briefing', headers, 'GetBriefingPackage', false)
+          .then(function(bd) {
+            var pkg = bd.briefingPackages[0];
+            var leg = pkg.leg[0];
+            var cats = pkg.categories || [];
+            var ofpCat = cats.find(function(c) { return c.name === 'OFP'; });
+            var notamCat = cats.find(function(c) { return c.name === 'NOTAM'; });
+            setStatus('正在載入 OFP 與 NOTAM...');
+            var ofpP = ofpCat
+              ? apiFetch('/lido/lcb/ui/' + legId + '/briefing/' + ofpCat.documents[0].fileId + '/docs', headers, 'GetBriefingDocumentContent', true)
+              : Promise.resolve('');
+            var notP = notamCat
+              ? apiFetch('/lido/lcb/ui/' + legId + '/briefing/' + notamCat.documents[0].fileId + '/docs', headers, 'GetBriefingDocumentContent', true)
+              : Promise.resolve('');
+            return Promise.all([ofpP, notP]).then(function(res) {
+              return { leg: leg, pkg: pkg, ofpText: res[0], notamText: res[1] };
+            });
+          });
+      });
+    }
+
+    // ── OFP Parser ─────────────────────────────────────────────
+    function parseOFP(text) {
+      var r = {};
+      var m;
+      m = text.match(/ETE\s+(\d+)\.(\d+)/);
+      if (m) r.ete = m[1] + ':' + m[2];
+      m = text.match(/BOF\s+\w+\s+(\d+)\s+[\d.]+\s+(\d+)NM.*W\/C\s+([PM])(\d+)/);
+      if (m) { r.dist = +m[2]; r.wcSign = m[3]; r.wcVal = +m[4]; }
+      m = text.match(/ALTN\s+(\w+)\s+(\d+)/);
+      if (m) { r.altnApt = m[1]; r.altnFuel = +m[2]; }
+      m = text.match(/FINAL RES\s+(\d+)/);
+      if (m) r.finalFuel = +m[1];
+      m = text.match(/^CONT\s+(\d+)/m);
+      if (m) r.contFuel = +m[1];
+      m = text.match(/^EXTRA\s+(\d+)/m);
+      if (m) r.extraFuel = +m[1];
+      m = text.match(/^ADD WXX\s+(\d+)/m);
+      if (m) r.wxFuel = +m[1];
+      m = text.match(/DEST HOLD\s+(\d+)/);
+      if (m) r.holdFuel = +m[1];
+      m = text.match(/ZFW\s+([\d.]+)\s*\/\s*([\d.]+)/);
+      if (m) { r.zfwLim = +m[1]; r.zfwPln = +m[2]; }
+      m = text.match(/TOW\s+([\d.]+)\s*\/\s*([\d.]+)/);
+      if (m) { r.towLim = +m[1]; r.towPln = +m[2]; }
+      m = text.match(/LDW\s+([\d.]+)\s*\/\s*([\d.]+)/);
+      if (m) { r.ldwLim = +m[1]; r.ldwPln = +m[2]; }
+      m = text.match(/PAYLOAD:\s*([\d.]+)/);
+      if (m) r.payload = +m[1];
+      return r;
+    }
+
+    // ── NOTAM Parser ───────────────────────────────────────────
+    function parseNOTAM(text) {
+      var sections = {};
+      var re = /={5,}\n([^\n]+)\n={5,}/g;
+      var lastKey = null, lastIdx = 0, mm;
+      while ((mm = re.exec(text)) !== null) {
+        if (lastKey) sections[lastKey] = text.slice(lastIdx, mm.index).trim();
+        lastKey = mm[1].trim();
+        lastIdx = mm.index + mm[0].length + 1;
+      }
+      if (lastKey) sections[lastKey] = text.slice(lastIdx).trim();
+      return sections;
+    }
+
+    // ── Helpers ────────────────────────────────────────────────
+    function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+    function fkg(n) { return n ? n.toLocaleString() : '0'; }
+    function fmtZ(ms) {
+      var d = new Date(ms);
+      return ('0'+d.getUTCHours()).slice(-2)+('0'+d.getUTCMinutes()).slice(-2)+'Z';
+    }
+    function fmtDate(ms) {
+      return new Date(ms).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'}).toUpperCase();
+    }
+    function wPct(v, lim) { return lim ? Math.round(v/lim*100) : 0; }
+    function pctColor(p) { return p > 95 ? '#ef4444' : p > 87 ? '#f59e0b' : '#22c55e'; }
+
+    function fuelRow(label, val, block) {
+      if (!val || val === 0) return '';
+      var pct = block ? Math.round(val/block*100) : 0;
+      var col = label.indexOf('Trip') >= 0 ? '#3b82f6' : label.indexOf('Extra') >= 0 ? '#22c55e' : '#475569';
+      return '<div class="jx-frow">' +
+        '<div class="jx-fl"><span class="jx-flabel">'+label+'</span>' +
+        '<span class="jx-fval">'+fkg(val)+' kg <span style="color:#334155;font-size:11px;font-weight:400">('+pct+'%)</span></span></div>' +
+        '<div class="jx-bar"><div class="jx-bfill" style="width:'+pct+'%;background:'+col+'"></div></div>' +
+      '</div>';
+    }
+
+    function wRow(label, pln, lim) {
+      if (!pln || !lim) return '<tr><td>'+label+'</td><td class="jx-pln">—</td><td class="jx-lim">—</td><td>—</td></tr>';
+      var p = wPct(pln, lim);
+      return '<tr><td>'+label+'</td><td class="jx-pln">'+pln.toFixed(1)+'</td>' +
+        '<td class="jx-lim">'+lim.toFixed(1)+'</td>' +
+        '<td style="text-align:right"><span style="color:'+pctColor(p)+';font-weight:600">'+p+'%</span></td></tr>';
+    }
+
+    function infoRow(label, val) {
+      return '<div class="jx-row"><span class="jx-rl">'+label+'</span><span class="jx-rv">'+val+'</span></div>';
+    }
+
+    // ── Renderers ──────────────────────────────────────────────
+    function renderOv() {
+      var leg = data.leg, ofp = data.ofp, fuel = leg.fuel;
+      var block = fuel.blockFuel || 1;
+      var wc = ofp.wcVal !== undefined
+        ? '<span class="'+(ofp.wcSign==='P'?'jxg':'jxr')+'">'+
+            (ofp.wcSign==='P'?'+':'-')+ofp.wcVal+' kt ('+( ofp.wcSign==='P'?'順風':'逆風')+')</span>'
+        : '—';
+      var std = leg.scheduledDepartureTime ? fmtZ(leg.scheduledDepartureTime) : '—';
+      var sta = leg.scheduledTimeOfArrival ? fmtZ(leg.scheduledTimeOfArrival) : '—';
+
+      document.getElementById('__jbody').innerHTML =
+        '<div class="jx-st">飛行燃油 (KG)</div>' +
+        '<div class="jx-grid">' +
+          '<div class="jx-card a"><div class="jx-cl">起飛油量</div><div class="jx-cv">'+fkg(fuel.takeOffFuel)+'</div><div class="jx-cu">kg</div></div>' +
+          '<div class="jx-card b"><div class="jx-cl">加油量 (Block)</div><div class="jx-cv">'+fkg(fuel.blockFuel)+'</div><div class="jx-cu">kg</div></div>' +
+        '</div>' +
+        '<div class="jx-fbox">' +
+          fuelRow('航程油量 (Trip)', fuel.tripFuel, block) +
+          fuelRow('備降油量 (Altn)', ofp.altnFuel, block) +
+          fuelRow('最終儲備 (Final Res)', ofp.finalFuel, block) +
+          fuelRow('不可預見 (Cont)', ofp.contFuel, block) +
+          (ofp.wxFuel ? fuelRow('天氣加油 (WXX)', ofp.wxFuel, block) : '') +
+          (ofp.holdFuel ? fuelRow('空中等待 (Hold)', ofp.holdFuel, block) : '') +
+          fuelRow('滑行油量 (Taxi)', fuel.taxiFuel, block) +
+          (ofp.extraFuel ? fuelRow('額外油量 (Extra)', ofp.extraFuel, block) : '') +
+        '</div>' +
+        '<div class="jx-st">重量 (公噸)</div>' +
+        '<table class="jx-wtbl">' +
+          '<thead><tr><th style="text-align:left">項目</th><th>計畫</th><th>限制</th><th>使用率</th></tr></thead>' +
+          '<tbody>' +
+            wRow('ZFW', ofp.zfwPln, ofp.zfwLim) +
+            wRow('TOW', ofp.towPln, ofp.towLim) +
+            wRow('LDW', ofp.ldwPln, ofp.ldwLim) +
+          '</tbody>' +
+        '</table>' +
+        '<div class="jx-st">航程資訊</div>' +
+        infoRow('STD / STA', std + ' → ' + sta) +
+        infoRow('預計飛行時間 (ETE)', ofp.ete || '—') +
+        infoRow('距離', ofp.dist ? ofp.dist + ' NM' : '—') +
+        infoRow('風分量 (W/C)', wc) +
+        infoRow('備降機場', ofp.altnApt || '—') +
+        infoRow('酬載 (Payload)', ofp.payload ? ofp.payload + ' T' : '—') +
+        infoRow('OFP 版本', leg.ofpNumber || '—');
+    }
+
+    function renderOfp() {
+      document.getElementById('__jbody').innerHTML =
+        '<div class="jx-st">OFP 原文</div>' +
+        '<div class="jx-mono">'+esc(data.ofpText)+'</div>';
+    }
+
+    function renderNotam() {
+      var sections = parseNOTAM(data.notamText);
+      var order = ['DEPARTURE AIRPORT','DESTINATION AIRPORT','ALTERNATE AIRPORT','EN-ROUTE','ENROUTE'];
+      var all = order.concat(Object.keys(sections).filter(function(k){return order.indexOf(k)<0;}));
+      var seen = {};
+      var html = '';
+      all.forEach(function(k) {
+        if (seen[k] || !sections[k] || !sections[k].trim()) return;
+        seen[k] = 1;
+        var highlighted = esc(sections[k])
+          .replace(/\b(CLOSED|CLSD)\b/g,'<span class="jxr" style="font-weight:bold">$1</span>')
+          .replace(/\b(WARNING|CAUTION|DANGER)\b/g,'<span class="jxa" style="font-weight:bold">$1</span>')
+          .replace(/\b(RWY|ILS|LOC|NDB|VOR|DME|GP)\b/g,'<span style="color:#60a5fa">$1</span>')
+          .replace(/\bNIL\b/g,'<span class="jxg">NIL</span>');
+        html += '<div class="jx-nsec">' +
+          '<div class="jx-ntitle">'+esc(k)+'</div>' +
+          '<div class="jx-mono" style="font-size:11px">'+highlighted+'</div>' +
+        '</div>';
+      });
+      document.getElementById('__jbody').innerHTML = html || '<div style="padding:40px;text-align:center;color:#475569">無 NOTAM 資料</div>';
+    }
+
+    function renderCrew() {
+      var leg = data.leg;
+      var pos = {'0':'機長 (Captain)','1':'副駕駛 (First Officer)','2':'第二副駕駛 (Second Officer)','3':'觀察員'};
+      var ico = {'0':'👨‍✈️','1':'🧑‍✈️','2':'🧑‍✈️','3':'👁️'};
+      var crew = (leg.crewMembers||[]).map(function(c){
+        return '<div class="jx-crew">' +
+          '<div class="jx-av">'+(ico[c.position]||'🧑‍✈️')+'</div>' +
+          '<div><div class="jx-cn">'+esc(c.name)+'</div>' +
+          '<div class="jx-cid">'+(pos[c.position]||'Pos '+c.position)+' &nbsp;·&nbsp; ID: '+esc(c.crewId)+'</div></div>' +
+        '</div>';
+      }).join('');
+      var d = leg.dispatcherInformation;
+      var disp = d ? '<div class="jx-crew">' +
+        '<div class="jx-av">📋</div>' +
+        '<div><div class="jx-cn">'+esc(d.dispatcherName)+'</div>' +
+        '<div class="jx-cid">派遣員 &nbsp;·&nbsp; '+esc(d.dispatchOffice)+' &nbsp;·&nbsp; ☎ '+esc(d.dispatcherTelephoneNumber)+'</div>' +
+        (d.dispatcherRemarks?'<div style="font-size:12px;color:#64748b;margin-top:4px">'+esc(d.dispatcherRemarks)+'</div>':'') +
+        '</div></div>' : '';
+      document.getElementById('__jbody').innerHTML =
+        '<div class="jx-st">飛行組員</div>' + crew +
+        '<div class="jx-st">派遣資訊</div>' + disp;
+    }
+
+    function renderTab(t) {
+      if (t==='ov') renderOv();
+      else if (t==='ofp') renderOfp();
+      else if (t==='notam') renderNotam();
+      else if (t==='crew') renderCrew();
+    }
+
+    // ── Main ───────────────────────────────────────────────────
+    loadAll().then(function(d) {
+      data = d;
+      data.ofp = parseOFP(d.ofpText);
+      var leg = d.leg;
+      document.getElementById('__jfn').textContent = leg.flightNumber;
+      document.getElementById('__jroute').textContent = leg.departureAirport + ' → ' + leg.destinationAirport;
+      document.getElementById('__jdate').textContent = fmtDate(leg.scheduledDepartureTime);
+      document.getElementById('__jac').textContent = (leg.aircraftDetails||{}).aircraftICAOType || '';
+      document.getElementById('__jreg').textContent = (leg.aircraftDetails||{}).aircraftRegistration || '';
+      document.getElementById('__jofp').textContent = 'OFP ' + (leg.ofpNumber || '');
+      renderTab(curTab);
+    }).catch(function(err) {
+      document.getElementById('__jbody').innerHTML =
+        '<div class="jx-spin-wrap">' +
+          '<div style="font-size:28px">⚠️</div>' +
+          '<div class="jx-err">'+esc(err.message)+'</div>' +
+          '<div style="font-size:12px;color:#334155;margin-top:8px;text-align:center">請確認已登入 LIDO 並在航班簡報頁面，<br>或切換任一頁籤後再試一次。</div>' +
+        '</div>';
+    });
+  }
+  return bm.toString();
+})();
+
+// Set bookmarklet href
+(function() {
+  var code = 'javascript:(' + bookmarkletCode + ')();';
+  document.getElementById('bm').href = code;
+})();
+</script>
+</body>
+</html>
